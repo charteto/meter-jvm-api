@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.charteto</groupId>
-  <artifactId>meter-api</artifactId>
+  <artifactId>meter-jvm-api</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
 
-  <name>meter-api</name>
+  <name>meter-jvm-api</name>
   <url>http://maven.apache.org</url>
 
   <properties>
