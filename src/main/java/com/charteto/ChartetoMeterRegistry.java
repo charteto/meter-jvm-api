@@ -1,13 +1,14 @@
 package com.charteto;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Measurement;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.step.StepMeterRegistry;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
-import tools.jackson.databind.ObjectMapper;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -82,12 +83,14 @@ public class ChartetoMeterRegistry extends StepMeterRegistry {
      * Simple map to represent the JSON object for one metric
      */
     private Object createMetricObject(Meter.Id id, double value) {
-        return Map.of(
-                "name", id.getName(),
-                "tags", id.getTags().stream().collect(Collectors.toMap(Tag::getKey, Tag::getValue)),
-                "value", value,
-                "timestamp", System.currentTimeMillis()
-        );
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", id.getName());
+        map.put("tags", id.getTags()
+                .stream()
+                .collect(Collectors.toMap(Tag::getKey, Tag::getValue)));
+        map.put("value", value);
+        map.put("timestamp", System.currentTimeMillis());
+        return map;
     }
 
     @Override
