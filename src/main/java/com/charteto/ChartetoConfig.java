@@ -14,7 +14,7 @@ public interface ChartetoConfig extends StepRegistryConfig {
     ChartetoConfig DEFAULT = k -> null;
 
     /**
-     * Prefix for configuration properties (e.g., management.charteto.metrics.export.uri)
+     * Prefix for configuration properties (e.g., management.metrics.export.charteto.uri)
      */
     default String prefix() {
         return "charteto";
