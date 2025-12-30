@@ -21,16 +21,22 @@ public class ChartetoNamingConvention implements NamingConvention {
     }
 
     /**
-     * Charteto's publish API will automatically strip Unicode without replacement. It will
-     * also replace all non-alphanumeric characters with '_'.
+     * Normalize and sanitize metric names
      */
     @Override
     public String name(String name, Meter.Type type, @Nullable String baseUnit) {
-        // forward slashes, even URL encoded, blow up the POST metadata API
-        String sanitized = StringEscapeUtils.escapeJson(delegate.name(name, type, baseUnit).replace('/', '_'));
+        // forward slashes, even URL encoded, blow up the POST API
+        String sanitized = delegate.name(name, type, baseUnit)
+                .replace('/', '_');
 
-        // Metrics that don't start with a letter get dropped on the floor by the Datadog
-        // publish API,
+        // Removes all non-ASCII characters
+        // and replace non-alphanumeric characters with '_'
+        sanitized = sanitized.replaceAll("[^\\p{ASCII}]", "")
+                .replaceAll("[^A-Za-z0-9.]", "_");
+
+        // Escape for JSON safety
+        sanitized = StringEscapeUtils.escapeJson(sanitized);
+        // Metrics that don't start with a letter get dropped on the floor by the Charteto publish API,
         // so we will prepend them with 'm.'.
         if (!Character.isLetter(sanitized.charAt(0))) {
             sanitized = "m." + sanitized;
@@ -53,7 +59,7 @@ public class ChartetoNamingConvention implements NamingConvention {
     }
 
     /**
-     * Some set of non-alphanumeric characters will be replaced by Datadog automatically
+     * Some set of non-alphanumeric characters will be replaced by Charteto automatically
      * with '_', but not all (e.g. '/' is OK, but '{' is replaced). It is permissible for
      * a tag value to begin with a digit.
      */
