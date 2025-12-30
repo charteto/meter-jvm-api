@@ -57,7 +57,7 @@ public class ChartetoMeterRegistry extends StepMeterRegistry {
 
     @Override
     protected void publish() {
-        String chartetoEndpoint = this.config.uri() + "/api/v1/series?api_key=" + this.config.apiKey();
+        String chartetoEndpoint = this.config.uri() + "/api/v1/metrics";
 
         try {
             for (List<Meter> meters : MeterPartition.partition(this, this.config.batchSize())) {
@@ -71,9 +71,11 @@ public class ChartetoMeterRegistry extends StepMeterRegistry {
                                 this::writeMeter,
                                 this::writeTimer,
                                 this::writeMeter))
-                        .collect(Collectors.joining(",", "{\"series\":[", "]}"));
+                        .collect(Collectors.joining(",", "{\"metrics\":[", "]}"));
                 this.logger.trace("sending metrics batch to charteto:{}{}", System.lineSeparator(), body);
-                this.httpClient.post(chartetoEndpoint).withJsonContent(body).send().onSuccess((response) -> {
+                this.httpClient.post(chartetoEndpoint).withJsonContent(body)
+                        .withHeader("X-API-Key",this.config.apiKey())
+                        .send().onSuccess((response) -> {
                     this.logger.debug("successfully sent {} metrics to charteto", meters.size());
                 }).onError((response) -> {
                     this.logger.error("failed to send metrics to charteto: {}", response.body());
@@ -129,16 +131,14 @@ public class ChartetoMeterRegistry extends StepMeterRegistry {
         }
 
         Iterable<Tag> tags = this.getConventionTags(fullId);
-        String host = this.config.hostTag() == null ? "" : StreamSupport.stream(tags.spliterator(), false).filter((t) -> this.config.hostTag().equals(t.getKey())).findAny().map((t) -> {
-            return ",\"host\":\"" + StringEscapeUtils.escapeJson(t.getValue()) + "\"";
-        }).orElse("");
+        String host = this.config.hostTag() == null ? "" : StreamSupport.stream(tags.spliterator(), false)
+                .filter((t) -> this.config.hostTag().equals(t.getKey())).findAny().map((t) -> ",\"host\":\"" + StringEscapeUtils.escapeJson(t.getValue()) + "\"").orElse("");
         String type = ",\"type\":\"" + ChartetoMetricMetadata.sanitizeType(statistic) + "\"";
         String baseUnit = ChartetoMetricMetadata.sanitizeBaseUnit(id.getBaseUnit(), overrideBaseUnit);
         String unit = baseUnit != null ? ",\"unit\":\"" + baseUnit + "\"" : "";
-        String tagsArray = tags.iterator().hasNext() ? StreamSupport.stream(tags.spliterator(), false).map((t) -> {
-            return "\"" + StringEscapeUtils.escapeJson(t.getKey()) + ":" + StringEscapeUtils.escapeJson(t.getValue()) + "\"";
-        }).collect(Collectors.joining(",", ",\"tags\":[", "]")) : "";
-        return "{\"metric\":\"" + StringEscapeUtils.escapeJson(this.getConventionName(fullId)) + "\",\"points\":[[" + wallTime / 1000L + ", " + value + "]]" + host + type + unit + tagsArray + "}";
+        String tagsArray = tags.iterator().hasNext() ? StreamSupport.stream(tags.spliterator(), false)
+                .map((t) -> "\"" + StringEscapeUtils.escapeJson(t.getKey()) + ":" + StringEscapeUtils.escapeJson(t.getValue()) + "\"").collect(Collectors.joining(",", ",\"tags\":[", "]")) : "";
+        return "{\"name\":\"" + StringEscapeUtils.escapeJson(this.getConventionName(fullId)) + "\",\"points\":[[" + wallTime + ", " + value + "]]" + host + type + unit + tagsArray + "}";
     }
 
     protected final TimeUnit getBaseTimeUnit() {

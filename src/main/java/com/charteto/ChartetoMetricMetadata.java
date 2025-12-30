@@ -41,9 +41,9 @@ class ChartetoMetricMetadata {
             case COUNT:
             case TOTAL:
             case TOTAL_TIME:
-                return "count";
+                return "COUNT";
             default:
-                return "gauge";
+                return "GAUGE";
         }
     }
 
