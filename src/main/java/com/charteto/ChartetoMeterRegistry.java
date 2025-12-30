@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -61,6 +62,8 @@ public class ChartetoMeterRegistry extends StepMeterRegistry {
 
         try {
             for (List<Meter> meters : MeterPartition.partition(this, this.config.batchSize())) {
+                String batchId = UUID.randomUUID().toString();
+
                 String body = meters.stream()
                         .flatMap(meter -> meter.match(this::writeMeter,
                                 this::writeMeter,
@@ -71,7 +74,11 @@ public class ChartetoMeterRegistry extends StepMeterRegistry {
                                 this::writeMeter,
                                 this::writeTimer,
                                 this::writeMeter))
-                        .collect(Collectors.joining(",", "{\"metrics\":[", "]}"));
+                        .collect(Collectors.joining(
+                                ",",
+                                "{\"batchId\":\"" + batchId + "\",\"metrics\":[",
+                                "]}"
+                        ));
                 this.logger.trace("sending metrics batch to charteto:{}{}", System.lineSeparator(), body);
                 this.httpClient.post(chartetoEndpoint).withJsonContent(body)
                         .withHeader("X-API-Key",this.config.apiKey())
