@@ -3,12 +3,12 @@ package com.charteto;
 import io.micrometer.core.instrument.config.MeterRegistryConfigValidator;
 import io.micrometer.core.instrument.config.validate.PropertyValidator;
 import io.micrometer.core.instrument.config.validate.Validated;
-import io.micrometer.core.instrument.step.StepRegistryConfig;
+import io.micrometer.core.instrument.push.PushRegistryConfig;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 
-public interface ChartetoConfig extends StepRegistryConfig {
+public interface ChartetoConfig extends PushRegistryConfig {
 
     // Default configuration
     ChartetoConfig DEFAULT = k -> null;
@@ -37,7 +37,7 @@ public interface ChartetoConfig extends StepRegistryConfig {
     }
 
     default Validated<?> validate() {
-        return MeterRegistryConfigValidator.checkAll(this, (c) -> StepRegistryConfig.validate(c), MeterRegistryConfigValidator.checkRequired("apiKey", ChartetoConfig::apiKey), MeterRegistryConfigValidator.checkRequired("uri", ChartetoConfig::uri));
+        return MeterRegistryConfigValidator.checkAll(this, (c) -> PushRegistryConfig.validate(c), MeterRegistryConfigValidator.checkRequired("apiKey", ChartetoConfig::apiKey), MeterRegistryConfigValidator.checkRequired("uri", ChartetoConfig::uri));
     }
 
 
